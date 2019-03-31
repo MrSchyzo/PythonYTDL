@@ -31,10 +31,12 @@ songs = args.list or [
 ]
 
 _start = time.time()
+parallel_count = args.parallel
 ytp = YTDownloadProcess()
 url_queue = JoinableQueue()
+
 workers = []
-for i in range(cpu_count() if not isinstance(args.threads, int) or args.threads < 1 else args.threads):
+for i in range(cpu_count() if not isinstance(parallel_count, int) or parallel_count < 1 else parallel_count):
     thread = threading.Thread(target=download_from_queue, args=(url_queue, ytp,))
     thread.daemon = True
     thread.start()
