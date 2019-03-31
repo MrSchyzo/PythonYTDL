@@ -1,4 +1,41 @@
+import math
+
 from optional import Optional
+
+
+def status_to_string(d):
+    if d is None:
+        return "Starting..."
+
+    if d['status'] == 'Start':
+        return "%s Discovering URL -- %s" % (
+            draw_progress(0),
+            d['url']
+        )
+
+    if d['status'] == 'Ended':
+        return "%s Extracted MP3 with success -- %s" % (
+            draw_progress(1),
+            d['filename']
+        )
+
+    if d['status'] == 'downloading':
+        cur = d['downloaded_bytes']
+        tot = d['total_bytes']
+        return ("%s @ %s, eta %s -- %s" % (
+            draw_progress(float(cur) / float(tot)),
+            d['_speed_str'],
+            d['_eta_str'],
+            d['filename']
+        ))
+
+    if d['status'] == 'finished':
+        return ("%s now converting to MP3 -- %s" % (
+            draw_progress(1.0),
+            d['filename']
+        ))
+
+    return "Unknown state!"
 
 
 def clear_print(msg):
@@ -56,3 +93,36 @@ def build_ytopts(
             'preferredquality': '384',
         }]),
     }
+
+
+def draw_progress(zero_to_one_progress=0.0, length=50):
+    full_char = u'\u2588'
+    quarter_char = u'\u2591'
+    half_char = u'\u2592'
+    almost_char = u'\u2593'
+
+    progress = length * zero_to_one_progress
+    full_char_count = int(math.floor(progress))
+    remainder = progress - full_char_count
+
+    next_char = ""
+    if remainder > 0.67:
+        next_char = almost_char
+    elif remainder > 0.33:
+        next_char = half_char
+    elif remainder > 0.0:
+        next_char = quarter_char
+    bar_content = ("%s%s%s" % ((full_char * full_char_count), next_char, (" " * length)))[:length]
+
+    return "|%s|" % bar_content
+
+
+def download_from_queue(queue, downloader):
+    while True:
+        try:
+            url = queue.get()
+            downloader.download_music(url)
+        except Exception as e:
+            print(e.message)
+        finally:
+            queue.task_done()
